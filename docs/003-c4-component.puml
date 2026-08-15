@@ -1,0 +1,61 @@
+@startuml
+skinparam backgroundColor #FEFECE
+skinparam defaultFontName "Segoe UI"
+skinparam defaultFontSize 12
+skinparam shadowing false
+
+title C4 - Level 3: Component — User Service + Catalog Service
+
+rectangle "User Service" as box_us #88CCFF {
+  rectangle "Auth Controller\n/login | /register\nJWT endpoints" as auth_ctrl
+  rectangle "Auth Service\nвалидация | хеширование\nJWT issue/refresh" as auth_svc
+  rectangle "User Controller\n/profile | /settings\nCRUD user" as user_ctrl
+  rectangle "User Service\nлогика профиля\nвалидация" as user_svc_biz
+  database "users_db" as udb
+}
+
+auth_ctrl --> auth_svc
+auth_svc --> udb
+user_ctrl --> user_svc_biz
+user_svc_biz --> udb
+
+rectangle "Catalog Service" as box_cs #88CCFF {
+  rectangle "Movie Controller\n/movies | /search\n/filter | /genres" as movie_ctrl
+  rectangle "Search Service\nтекстовый поиск\nфильтрация" as search_svc
+  rectangle "Genre/Actor Service\n/genres | /actors\nметаданные" as meta_svc
+  rectangle "Cache Layer\nRedis\nкэш фильмов" as cache
+  database "catalog_db" as cdb
+}
+
+movie_ctrl --> search_svc
+search_svc --> cache
+search_svc --> cdb
+meta_svc --> cdb
+
+rectangle "API Gateway" as gw
+gw --> auth_ctrl : /api/auth/*
+gw --> user_ctrl : /api/users/*
+gw --> movie_ctrl : /api/movies/*
+
+note bottom of box_us
+  User Service — компоненты:
+  Auth Controller — REST endpoints авторизации
+  Auth Service — бизнес-логика JWT, хеширование
+  User Controller — REST endpoints профиля
+  User Service — бизнес-логика пользователя
+end note
+
+note bottom of box_cs
+  Catalog Service — компоненты:
+  Movie Controller — REST endpoints каталога
+  Search Service — поиск и фильтрация
+  Genre/Actor Service — метаданные
+  Cache Layer — Redis кэш для read-heavy нагрузки
+end note
+
+legend right
+  |=#88CCFF| Сервис |
+  |=#EEEEFF| База данных |
+end legend
+
+@enduml

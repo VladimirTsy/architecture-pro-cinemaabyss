@@ -1,0 +1,112 @@
+@startuml
+skinparam backgroundColor #FEFECE
+skinparam defaultFontName "Segoe UI"
+skinparam defaultFontSize 12
+skinparam shadowing false
+
+title C4 - Level 4: Code — User Service / Auth Module
+
+package "user-service" as us {
+
+  package "controller" as ctrl {
+    [AuthController] as authCtrl
+    [LoginRequest] as loginReq
+    [LoginResponse] as loginRes
+    [RegisterRequest] as regReq
+    [RegisterResponse] as regRes
+  }
+
+  package "service" as svc {
+    [AuthService] as authSvc
+    [TokenService] as tokenSvc
+    [PasswordEncoder] as pwdEnc
+  }
+
+  package "repository" as repo {
+    [UserRepository] as userRepo
+    [UserEntity] as userEnt
+  }
+
+  package "model" as mdl {
+    [JwtToken] as jwt
+    [Credentials] as creds
+  }
+
+  package "config" as cfg {
+    [SecurityConfig] as secCfg
+    [JwtProperties] as jwtProp
+  }
+}
+
+authCtrl --> authSvc : authenticate()
+authCtrl --> authSvc : register()
+authSvc --> tokenSvc : generateToken()
+authSvc --> pwdEnc : encode()
+authSvc --> pwdEnc : matches()
+authSvc --> userRepo : findByEmail()
+authSvc --> userRepo : save()
+userRepo --> userEnt
+tokenSvc --> jwt
+tokenSvc --> jwtProp
+authCtrl --> loginReq
+authCtrl --> loginRes
+authCtrl --> regReq
+authCtrl --> regRes
+secCfg --> authCtrl
+secCfg --> tokenSvc
+authSvc --> creds
+
+note bottom of authCtrl
+  @RestController
+  @RequestMapping("/api/auth")
+  
+  POST /login
+  POST /register
+  POST /refresh
+end note
+
+note bottom of authSvc
+  @Service
+  
+  login(email, password)
+  register(username, email, password)
+  refreshToken(token)
+  validateToken(token)
+end note
+
+note bottom of tokenSvc
+  @Service
+  
+  generateAccessToken(user)
+  generateRefreshToken(user)
+  extractClaims(token)
+  isTokenExpired(token)
+end note
+
+note bottom of userRepo
+  @Repository
+  extends JpaRepository<UserEntity, Long>
+  
+  findByEmail(email)
+  findByUsername(username)
+  existsByEmail(email)
+end note
+
+note bottom of jwtProp
+  @ConfigurationProperties("jwt")
+  
+  secret: String
+  expirationMs: long
+  refreshExpirationMs: long
+  issuer: String
+end note
+
+legend right
+  |=#E1F5FE| controller |
+  |=#E8F5E9| service |
+  |=#FFF3E0| repository |
+  |=#F3E5F5| model |
+  |=#FFEBEE| config |
+end legend
+
+@enduml
