@@ -23,6 +23,7 @@ public class EventsController {
         this.eventProducer = eventProducer;
     }
 
+    /* health */
     @GetMapping("/health")
     public ResponseEntity<String> health() {
         return ResponseEntity.ok("{\"status\":true}");
