@@ -24,8 +24,8 @@ public class EventsController {
     }
 
     @GetMapping("/health")
-    public ResponseEntity<Boolean> health() {
-        return ResponseEntity.ok(true);
+    public ResponseEntity<String> health() {
+        return ResponseEntity.ok("{\"status\":true}");
     }
 
     @PostMapping("/movie")
