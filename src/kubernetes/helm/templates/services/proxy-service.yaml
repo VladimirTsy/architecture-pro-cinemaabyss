@@ -15,7 +15,7 @@ spec:
         app: proxy-service
     spec:
       imagePullSecrets:
-        - name: {{ .Values.imagePullSecrets.name }}
+        - name: dockerconfigjson
       containers:
         - name: proxy-service
           image: "{{ .Values.proxyService.image.repository }}:{{ .Values.proxyService.image.tag }}"

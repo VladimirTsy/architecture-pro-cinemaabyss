@@ -7,7 +7,7 @@ global:
 imagePullSecrets:
   registry: ghcr.io
   username: "vladimirtsy"
-  password: "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"
+  password: "" # <-- token in variable .profile
 # Database configuration
 database:
   host: postgres
@@ -87,7 +87,7 @@ moviesService:
       cpu: 100m
       memory: 128Mi
   service:
-    port: 8081
+    port: 80
     targetPort: 8081
     type: ClusterIP
 
@@ -128,6 +128,7 @@ kafka:
       memory: 512Mi
   persistence:
     enabled: true
+    storageClass: local-path
     size: 5Gi
     accessMode: ReadWriteOnce
   topics:
@@ -158,6 +159,7 @@ zookeeper:
       memory: 256Mi
   persistence:
     enabled: true
+    storageClass: local-path
     size: 1Gi
     accessMode: ReadWriteOnce
 
