@@ -376,6 +376,31 @@ helm install cinemaabyss .\src\kubernetes\helm --namespace cinemaabyss --create-
 
 kubectl label namespace cinemaabyss istio-injection=enabled --overwrite
 
+### Важное исправление безопасности: Локальное хранение токена GitHub Packages 🔐
+Чтобы защитить Personal Access Token (PAT) от автоматического отзыва со стороны систем безопасности GitHub (Secret Scanning) при выполнении команд push, **категорически запрещено** оставлять рабочий токен в файле `values.yaml` в поле `password`. 
+
+Вместо этого очистите поле в кодовой базе:
+```yaml
+imagePullSecrets:
+  registry: ghcr.io
+  username: "vladimirtsy"
+  password: "" # <-- token in variable .profile
+```
+
+И сохраните токен в профиль вашей операционной системы Linux на сервере:
+```bash
+# 1. Записываем токен в профиль пользователя Linux (выполняется один раз)
+echo 'export GITHUB_TOKEN="ваш_рабочий_токен_ghp_..."' >> ~/.profile
+source ~/.profile
+```
+
+### Развертывание чарта приложения
+Теперь при установке чарта передавайте токен динамически из памяти ОС с помощью флага `--set`. Обратите внимание, что для Linux-серверов обратные слэши в путях заменяются на прямые:
+
+```bash
+helm install cinemaabyss ./src/kubernetes/helm --namespace cinemaabyss --create-namespace --set imagePullSecrets.password=\$GITHUB_TOKEN
+```
+
 kubectl get namespace -L istio-injection
 
 kubectl apply -f .\src\kubernetes\circuit-breaker-config.yaml -n cinemaabyss
@@ -398,8 +423,13 @@ kubectl exec -n cinemaabyss $FORTIO_POD -c fortio -- fortio load -c 50 -qps 0 -n
 Например,
 
 ```bash
-kubectl exec -n cinemaabyss fortio-deploy-b6757cbbb-7c9qg  -c fortio -- fortio load -c 50 -qps 0 -n 500 -loglevel Warning http://movies-service:8081/api/movies
+kubectl exec -n cinemaabyss $FORTIO_POD  -c fortio -- fortio load -c 50 -qps 0 -n 500 -loglevel Warning http://movies-service:8081/api/movies
 ```
+# True for me 
+```bash
+kubectl exec -n cinemaabyss $FORTIO_POD  -c fortio -- fortio load -c 50 -qps 0 -n 500 -loglevel Warning http://movies-service.cinemaabyss.svc.cluster.local/api/movies```
+```
+
 
 Вывод будет типа такого
 
@@ -413,7 +443,7 @@ Code 503 : 399 (79.8 %)
 Можно еще проверить статистику
 
 ```bash
-kubectl exec -n cinemaabyss fortio-deploy-b6757cbbb-7c9qg -c istio-proxy -- pilot-agent request GET stats | grep movies-service | grep pending
+kubectl exec -n cinemaabyss $FORTIO_POD -c istio-proxy -- pilot-agent request GET stats | grep movies-service | grep pending
 ```
 
 И там смотрим 
