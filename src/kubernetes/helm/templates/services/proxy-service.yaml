@@ -22,6 +22,12 @@ spec:
           imagePullPolicy: {{ .Values.proxyService.image.pullPolicy }}
           ports:
             - containerPort: {{ .Values.proxyService.service.targetPort }}
+              hostPort: 8000
+          envFrom:
+            - configMapRef:
+                name: cinemaabyss-config
+            - secretRef:
+                name: cinemaabyss-secrets
           resources:
             {{- toYaml .Values.proxyService.resources | nindent 12 }}
 ---

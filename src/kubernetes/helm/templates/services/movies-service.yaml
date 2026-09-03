@@ -29,6 +29,7 @@ spec:
         imagePullPolicy: {{ .Values.moviesService.image.pullPolicy }}
         ports:
         - containerPort: {{ .Values.moviesService.service.targetPort }}
+          hostPort: 8081
         env:
         - name: PORT
           value: "{{ .Values.moviesService.service.targetPort }}"
@@ -60,7 +61,7 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: movies-service
+  name: movies
   namespace: {{ .Values.global.namespace }}
   labels:
     app: movies-service

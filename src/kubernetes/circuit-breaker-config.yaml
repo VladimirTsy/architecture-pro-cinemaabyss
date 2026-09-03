@@ -4,7 +4,7 @@ metadata:
   name: movies-service-circuit-breaker
   namespace: cinemaabyss
 spec:
-  host: movies-service.cinemaabyss.svc.cluster.local
+  host: movies.cinemaabyss.svc.cluster.local
   trafficPolicy:
     connectionPool:
       tcp:
