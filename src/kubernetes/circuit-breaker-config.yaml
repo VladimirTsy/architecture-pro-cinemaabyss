@@ -4,11 +4,11 @@ metadata:
   name: movies-service-circuit-breaker
   namespace: cinemaabyss
 spec:
-  host: movies.cinemaabyss.svc.cluster.local
+  host: movies-service.cinemaabyss.svc.cluster.local
   trafficPolicy:
     connectionPool:
       tcp:
-        maxConnections: 15
+        maxConnections: 5
       http:
-        http1MaxPendingRequests: 15
-        maxRequestsPerConnection: 15
+        http1MaxPendingRequests: 5
+        maxRequestsPerConnection: 5

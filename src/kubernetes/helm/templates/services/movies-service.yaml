@@ -61,7 +61,7 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: movies
+  name: movies-service
   namespace: {{ .Values.global.namespace }}
   labels:
     app: movies-service
@@ -71,7 +71,11 @@ spec:
   selector:
     app: movies-service
   ports:
-  - port: {{ .Values.moviesService.service.port }}
-    targetPort: {{ .Values.moviesService.service.targetPort }}
+    - name: http-default
+      port: 80
+      targetPort: {{ .Values.moviesService.service.targetPort }}
+    - name: http-legacy
+      port: 8081
+      targetPort: {{ .Values.moviesService.service.targetPort }}
   type: {{ .Values.moviesService.service.type }}
 {{- end }}
