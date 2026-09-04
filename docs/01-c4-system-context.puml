@@ -1,0 +1,36 @@
+@startuml
+skinparam backgroundColor #FEFECE
+skinparam defaultFontName "Segoe UI"
+skinparam defaultFontSize 12
+skinparam shadowing false
+
+title C4 - Level 1: System Context — КиноБездна
+
+rectangle "Пользователь\n(мобильное устройство)" as mu
+rectangle "Пользователь\n(ноутбук / браузер)" as lu
+rectangle "Пользователь\n(смарт-ТВ)" as tu
+
+rectangle "КиноБездна\nПлатформа видеоконтента\n(REST API)" as kb #88CCFF
+
+rectangle "Рекомендательная\nсистема\n(сторонний сервис)" as recsys
+
+mu --> kb : HTTPS/REST JSON\nвыбор фильма | оценка\nизбранное | подписка
+lu --> kb : HTTPS/REST JSON\nполный каталог\nвсе функции
+tu --> kb : HTTPS/REST JSON\nBFF агрегация\nадаптивный интерфейс
+
+kb --> recsys : HTTPS/REST\nполучение рекомендаций
+
+note bottom of kb
+  Ядро системы:
+  аутентификация | каталог фильмов
+  рейтинги | избранное
+  подписки | платежи | скидки
+  рекомендации (адаптер)
+end note
+
+legend right
+  |=#88CCFF| Система КиноБездна |
+  |=#DDDDDD| Внешняя система |
+end legend
+
+@enduml

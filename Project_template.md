@@ -3,9 +3,16 @@
 ## Задание 1
 
 1. Спроектируйте to be архитектуру КиноБездны, разделив всю систему на отдельные домены и организовав интеграционное взаимодействие и единую точку вызова сервисов.
-Результат представьте в виде контейнерной диаграммы в нотации С4.
-Добавьте ссылку на файл в этот шаблон
-[ссылка на файл](ссылка)
+Результат представьте в виде диаграмм в нотации С4 (4 уровня):
+
+| Уровень | Описание | Файл |
+|---|---|---|
+| **System Context** | Система и внешние пользователи/системы | [docs/001-c4-system-context.puml](docs/001-c4-system-context.puml) |
+| **Container** | Сервисы, Gateway, БД, Kafka | [docs/002-c4-container.puml](docs/002-c4-container.puml) |
+| **Component** | Компоненты внутри сервисов (User + Catalog) | [docs/003-c4-component.puml](docs/003-c4-component.puml) |
+| **Code** | Классы/модули Auth Module (User Service) | [docs/004-c4-code.puml](docs/004-c4-code.puml) |
+
+[Архитектурное описание (Markdown)](docs/kinobezdna-architecture.md)
 
 
 ## Задание 2
@@ -351,7 +358,10 @@ https://cinemaabyss.example.com/api/movies
 
 
 # Задание 5
-Компания планирует активно развиваться и для повышения надежности, безопасности, реализации сетевых паттернов типа Circuit Breaker и канареечного деплоя вам как архитектору необходимо развернуть istio и настроить circuit breaker для monolith и movies сервисов.
+Компания планирует активно развиваться и для повышения надежности, безопасности, 
+реализации сетевых паттернов типа Circuit Breaker и канареечного деплоя 
+вам как архитектору необходимо развернуть istio и настроить circuit breaker для monolith и movies сервисов.
+
 
 ```bash
 
@@ -365,6 +375,31 @@ helm install istiod istio/istiod -n istio-system --wait
 helm install cinemaabyss .\src\kubernetes\helm --namespace cinemaabyss --create-namespace
 
 kubectl label namespace cinemaabyss istio-injection=enabled --overwrite
+
+### Важное исправление безопасности: Локальное хранение токена GitHub Packages 🔐
+Чтобы защитить Personal Access Token (PAT) от автоматического отзыва со стороны систем безопасности GitHub (Secret Scanning) при выполнении команд push, **категорически запрещено** оставлять рабочий токен в файле `values.yaml` в поле `password`. 
+
+Вместо этого очистите поле в кодовой базе:
+```yaml
+imagePullSecrets:
+  registry: ghcr.io
+  username: "vladimirtsy"
+  password: "" # <-- token in variable .profile
+```
+
+И сохраните токен в профиль вашей операционной системы Linux на сервере:
+```bash
+# 1. Записываем токен в профиль пользователя Linux (выполняется один раз)
+echo 'export GITHUB_TOKEN="ваш_рабочий_токен_ghp_..."' >> ~/.profile
+source ~/.profile
+```
+
+### Развертывание чарта приложения
+Теперь при установке чарта передавайте токен динамически из памяти ОС с помощью флага `--set`. Обратите внимание, что для Linux-серверов обратные слэши в путях заменяются на прямые:
+
+```bash
+helm install cinemaabyss ./src/kubernetes/helm --namespace cinemaabyss --create-namespace --set imagePullSecrets.password=\$GITHUB_TOKEN
+```
 
 kubectl get namespace -L istio-injection
 
@@ -388,8 +423,13 @@ kubectl exec -n cinemaabyss $FORTIO_POD -c fortio -- fortio load -c 50 -qps 0 -n
 Например,
 
 ```bash
-kubectl exec -n cinemaabyss fortio-deploy-b6757cbbb-7c9qg  -c fortio -- fortio load -c 50 -qps 0 -n 500 -loglevel Warning http://movies-service:8081/api/movies
+kubectl exec -n cinemaabyss $FORTIO_POD  -c fortio -- fortio load -c 50 -qps 0 -n 500 -loglevel Warning http://movies-service:8081/api/movies
 ```
+# True for me 
+```bash
+kubectl exec -n cinemaabyss $FORTIO_POD  -c fortio -- fortio load -c 50 -qps 0 -n 500 -loglevel Warning http://movies-service.cinemaabyss.svc.cluster.local/api/movies```
+```
+
 
 Вывод будет типа такого
 
@@ -403,7 +443,7 @@ Code 503 : 399 (79.8 %)
 Можно еще проверить статистику
 
 ```bash
-kubectl exec -n cinemaabyss fortio-deploy-b6757cbbb-7c9qg -c istio-proxy -- pilot-agent request GET stats | grep movies-service | grep pending
+kubectl exec -n cinemaabyss $FORTIO_POD -c istio-proxy -- pilot-agent request GET stats | grep movies | grep pending
 ```
 
 И там смотрим 

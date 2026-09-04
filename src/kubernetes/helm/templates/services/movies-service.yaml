@@ -29,6 +29,7 @@ spec:
         imagePullPolicy: {{ .Values.moviesService.image.pullPolicy }}
         ports:
         - containerPort: {{ .Values.moviesService.service.targetPort }}
+          hostPort: 8081
         env:
         - name: PORT
           value: "{{ .Values.moviesService.service.targetPort }}"
@@ -55,7 +56,7 @@ spec:
           periodSeconds: 20
       restartPolicy: Always
       imagePullSecrets:
-        - name: dockerconfigjson
+      - name: dockerconfigjson
 ---
 apiVersion: v1
 kind: Service
@@ -70,7 +71,11 @@ spec:
   selector:
     app: movies-service
   ports:
-  - port: {{ .Values.moviesService.service.port }}
-    targetPort: {{ .Values.moviesService.service.targetPort }}
+    - name: http-default
+      port: 80
+      targetPort: {{ .Values.moviesService.service.targetPort }}
+    - name: http-legacy
+      port: 8081
+      targetPort: {{ .Values.moviesService.service.targetPort }}
   type: {{ .Values.moviesService.service.type }}
 {{- end }}

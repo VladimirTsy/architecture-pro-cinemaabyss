@@ -1,0 +1,99 @@
+@startuml
+skinparam backgroundColor #FEFECE
+skinparam defaultFontName "Segoe UI"
+skinparam defaultFontSize 12
+skinparam shadowing false
+
+title C4 - Level 2: Container — КиноБездна
+
+rectangle "Пользователь\n(мобильное)" as mu
+rectangle "Пользователь\n(ноутбук)" as lu
+rectangle "Пользователь\n(смарт-ТВ)" as tu
+
+rectangle "Реком. система\n(сторонний)" as recsys
+
+rectangle "API Gateway\n(Kong / NGINX)\nrate limiting | SSL | JWT\ndevice-aware routing | BFF" as gw
+
+mu --> gw : HTTPS/REST\nlite payload
+lu --> gw : HTTPS/REST\nfull payload
+tu --> gw : HTTPS/REST\nTV payload
+
+rectangle "User Service\nрегистрация | аутентификация\nJWT/OAuth2 | профили" as us
+
+rectangle "Catalog Service\nфильмы | видео\nжанры | актёры | поиск" as cs
+
+rectangle "Rating Service\nоценки фильмов\nсредние | рейтинги" as rs
+
+rectangle "Favorites Service\nизбранное\nпапки | CRUD" as fs
+
+rectangle "Subscription Service\nпланы подписки\nстатусы | продление" as ss
+
+rectangle "Payment Service\nоплата\nтранзакции | биллинг" as ps
+
+rectangle "Discount Service\nпромокоды\nскидки | акции" as ds
+
+rectangle "Rec. Adapter\nпрокси к RS\nкэш | polling" as ra
+
+database "users_db\nPostgreSQL" as udb
+database "catalog_db\nPostgreSQL" as cdb
+database "ratings_db\nPostgreSQL" as rdb
+database "favorites_db\nPostgreSQL" as fdb
+database "subscriptions_db\nPostgreSQL" as sdb
+database "payments_db\nPostgreSQL" as pdb
+database "discounts_db\nPostgreSQL" as ddb
+
+rectangle "Kafka\nuser.events | rating.events\nsubscription.events\npayment.events | discount.events" as kf
+
+gw --> us : REST/gRPC
+gw --> cs : REST
+gw --> rs : REST
+gw --> fs : REST
+gw --> ss : REST
+gw --> ps : REST
+gw --> ds : REST
+gw --> ra : REST
+
+us --> udb : JDBC
+cs --> cdb : JDBC
+rs --> rdb : JDBC
+fs --> fdb : JDBC
+ss --> sdb : JDBC
+ps --> pdb : JDBC
+ds --> ddb : JDBC
+
+us --> kf : publish\nuser.events
+rs --> kf : publish\nrating.events
+ss --> kf : publish\nsubscription.events
+ps --> kf : publish\npayment.events
+ds --> kf : publish\ndiscount.events
+
+kf --> ra : consume\nuser + rating
+kf --> fs : consume\nrating.events
+kf --> ss : consume\npayment.events
+
+ra --> recsys : HTTPS/REST\npolling
+
+note bottom of gw
+  API Gateway — Единая точка входа
+  Маршрутизация по девайсу:
+  Mobile - lite | Laptop - full | TV - BFF
+  JWT validation | Rate limiting | SSL
+end note
+
+note bottom of kf
+  Асинхронная интеграция
+  rating.events -> Rec Adapter + Favorites
+  payment.events -> Subscription
+  user.events -> Recommendation
+end note
+
+legend right
+  |=#FFAA88| API Gateway |
+  |=#88CCFF| Микро-сервис |
+  |=#CCAA88| Адаптер RS |
+  |=#FFDDAA| Kafka (async) |
+  |=#DDDDDD| Внешняя система |
+  |=#EEEEFF| PostgreSQL DB |
+end legend
+
+@enduml
